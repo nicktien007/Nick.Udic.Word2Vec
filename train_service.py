@@ -103,6 +103,8 @@ def query(file_name, keyword, top=100):
 
 
 def querynp(file_name_pos, file_name_neg, keyword):
+
+    # load 正、負向情緒模型
     model_pos = models.Word2Vec.load(file_name_pos)
     model_neg = models.Word2Vec.load(file_name_neg)
 
@@ -117,7 +119,6 @@ def querynp(file_name_pos, file_name_neg, keyword):
 
     t1 = 0
     t2 = 0
-
     is_inverse = False
 
     for w in words:
