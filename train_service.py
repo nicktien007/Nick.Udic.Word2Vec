@@ -28,12 +28,6 @@ def segment(file_name, output_name):
 
     # # jieba custom setting.
     jieba.set_dictionary('jieba_dict/dict.txt.big')
-    #
-    # # load stopwords set
-    # stopword_set = set()
-    # with open('jieba_dict/stopwords.txt', 'r', encoding='utf-8') as stopwords:
-    #     for stopword in stopwords:
-    #         stopword_set.add(stopword.strip('\n'))
 
     output = open(output_name, 'w', encoding='utf-8')
     with open(file_name, 'r', encoding='utf-8') as content:
@@ -41,7 +35,10 @@ def segment(file_name, output_name):
             line = line.strip('\n')
             words = jieba_cut(line)
             for word in words:
-                output.write(word + ' ')
+                if word == "\n":
+                    output.write("\n")
+                else:
+                    output.write(word + ' ')
 
             if (texts_num + 1) % 10000 == 0:
                 logging.info("已完成前 %d 行的斷詞" % (texts_num + 1))
@@ -49,21 +46,22 @@ def segment(file_name, output_name):
     logging.info("結束 segment")
 
 
-def jieba_cut(line):
+def jieba_cut(line, use_stopwords=True, is_EOL=True):
     # load stopwords set
     stopword_set = set()
-    with open('jieba_dict/stopwords.txt', 'r', encoding='utf-8') as stopwords:
-        for stopword in stopwords:
-            stopword_set.add(stopword.strip('\n'))
+    if use_stopwords:
+        with open('jieba_dict/stopwords.txt', 'r', encoding='utf-8') as stopwords:
+            for stopword in stopwords:
+                stopword_set.add(stopword.strip('\n'))
 
     result = []
     words = jieba.cut(line, cut_all=False)
     for w in words:
-
         if w not in stopword_set:
             result.append(w)
 
-        # result.append('\n')
+    if is_EOL:
+        result.append('\n')
     return result
 
 
@@ -104,87 +102,37 @@ def query(file_name, keyword, top=100):
             print(item[0] + "," + str(item[1]))
 
 
-def query2(file_name_pos, file_name_neg, keyword):
+def querynp(file_name_pos, file_name_neg, keyword):
     model_pos = models.Word2Vec.load(file_name_pos)
     model_neg = models.Word2Vec.load(file_name_neg)
 
+    inverse_set = set()
+    with open('jieba_dict/inversewords.txt', 'r', encoding='utf-8') as inversewords:
+        for inverseword in inversewords:
+            inverse_set.add(inverseword.strip('\n'))
+
     # jieba custom setting.
     jieba.set_dictionary('jieba_dict/dict.txt.big')
-
-    # words = jieba.cut(keyword, cut_all=False)
-    words = jieba_cut(keyword)
-    total_pos = 0
-    total_neg = 0
-
-    t_p = 0
-    t_n = 0
+    words = jieba_cut(keyword, False, False)
 
     t1 = 0
     t2 = 0
 
-    # a1=model_pos.n_similarity(words, model_pos.wv.index2word)
-    # a2=model_neg.n_similarity(words, model_neg.wv.index2word)
-    # res_pos = 0
-    # res_neg = 0
-    # for i in range(len(words)):
-    #     for w1 in words:
-    #         if words[i] == w1:
-    #             continue
-    #         print(words[i], w1)
-    #         if words[i] in model_pos and w1 in model_pos:
-    #             res_pos += model_pos.similarity(words[i], w1)
-    #             print("res_pos",res_pos)
-    #         if words[i] in model_neg and w1 in model_neg:
-    #             res_neg += model_neg.similarity(words[i], w1)
-    #             print("res_neg",res_neg)
-
-    # for i in range(len(words)-1):
-    #     if words[0] == words[i+1]:
-    #         continue
-    #     print(words[0], words[i + 1])
-    #     if words[0] in model_pos and words[i + 1] in model_pos:
-    #         res_pos += model_pos.similarity(words[0], words[i + 1])
-    #         print("res_pos", res_pos)
-    #     if words[0] in model_neg and words[i + 1] in model_neg:
-    #         res_neg += model_neg.similarity(words[0], words[i + 1])
-    #         print("res_neg", res_neg)
+    is_inverse = False
 
     for w in words:
         print(w)
-        if w in model_pos:
-            # print(model_pos[w])
-            score1 = model_pos[w].sum() / len(model_pos[w])
+        if w in inverse_set:
+            is_inverse = not is_inverse
 
-            # print(model_pos.predict_output_word([w]))
+        if w in model_pos:
             t1 += sum(i[1] for i in model_pos.predict_output_word([w]))
 
-            print(w, "正向分數:", score1)
-            total_pos += score1
-            t_p = t_p + 1
-
         if w in model_neg:
-            # print(model_neg[w])
-            # print(model_neg.wv.similar_by_vector(w))
-            score2 = model_neg[w].sum() / len(model_neg[w])
-
             t2 += sum(i[1] for i in model_neg.predict_output_word([w]))
-
-            print(w, "反向分數:", score2)
-            total_neg += score2
-            t_n = t_n + 1
-
-    print("total_pos = ", total_pos)
-    print("total_neg = ", total_neg)
-    #
-    # print("t_p = ", t_p)
-    # print("t_n = ", t_n)
 
     print('正向概率總和為:%.8f' % t1)
     print('反向概率總和為:%.8f' % t2)
 
-    # print("res_pos = ", res_pos)
-    # print("res_neg = ", res_neg)
-
-    # print(total_pos > total_neg)
-    # print(res_pos > res_neg)
-    print(t1 > t2)
+    state = not (t1 > t2) if is_inverse else t1 > t2
+    print("正面" if state else "負面")

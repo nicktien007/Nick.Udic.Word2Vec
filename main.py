@@ -1,5 +1,5 @@
 import arg_parser_factory
-from train_service import query, wiki_to_txt, segment, train, query2
+from train_service import query, wiki_to_txt, segment, train, querynp
 import logging_utils
 
 
@@ -19,7 +19,7 @@ def main():
         query(args.input, args.keyword, args.limit)
 
     if args.subcmd == 'querynp':
-        query2(args.inputp,args.inputn, args.keyword)
+        querynp(args.inputp, args.inputn, args.keyword)
 
 
 if __name__ == '__main__':

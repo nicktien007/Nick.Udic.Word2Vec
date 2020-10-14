@@ -57,16 +57,16 @@ def build():
 
     # 進行正反向查詢
     querynp_parser = subcmd.add_parser('querynp',
-                                     help='進行正反向查詢')
+                                       help='進行正反向查詢')
     querynp_parser.add_argument('-ip',
-                              dest='inputp',
-                              help='正向 詞向量模型路徑')
+                                dest='inputp',
+                                help='正向 詞向量模型路徑')
     querynp_parser.add_argument('-in',
-                               dest='inputn',
-                               help='反向 詞向量模型路徑')
+                                dest='inputn',
+                                help='反向 詞向量模型路徑')
     querynp_parser.add_argument("-k", '--keyword',
-                              dest='keyword',
-                              help='關鍵字',
-                              default="")
+                                dest='keyword',
+                                help='關鍵字',
+                                default="")
 
     return parser.parse_args()
