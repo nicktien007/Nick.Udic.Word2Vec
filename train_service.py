@@ -23,6 +23,13 @@ def wiki_to_txt(file_name, output_name):
     logging.info("結束 wiki_to_txt")
 
 
+def gensim_model2txt():
+    from gensim.models.keyedvectors import KeyedVectors
+    # https://bit.ly/3pXwIDx
+    model = KeyedVectors.load('./trained_model/wiki_model/word2vec_wiki_zh.model.bin')
+    model.wv.save_word2vec_format('./trained_model/wiki_model/word2vec_wiki_zh.model.txt', binary=False)
+
+
 def segment(file_name, output_name):
     logging.info("開始 segment")
 
@@ -103,7 +110,6 @@ def query(file_name, keyword, top=100):
 
 
 def querynp(file_name_pos, file_name_neg, keyword):
-
     # load 正、負向情緒模型
     model_pos = models.Word2Vec.load(file_name_pos)
     model_neg = models.Word2Vec.load(file_name_neg)
@@ -127,7 +133,8 @@ def querynp(file_name_pos, file_name_neg, keyword):
             is_inverse = not is_inverse
 
         if w in model_pos:
-            t1 += sum(i[1] for i in model_pos.predict_output_word([w]))
+            # t1 += sum(i[1] for i in model_pos.predict_output_word([w]))
+            t1 += sum(map(lambda x: x[1], model_pos.predict_output_word([w])))
 
         if w in model_neg:
             t2 += sum(i[1] for i in model_neg.predict_output_word([w]))
